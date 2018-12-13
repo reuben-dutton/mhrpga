@@ -1,0 +1,11 @@
+*.gif
+*.jpeg
+*.jpg
+*.png
+*.pyc
+env.json
+eventsaga.json
+new_event.json
+eventinmaking.json
+event_test.py
+vote_test.py
