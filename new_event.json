@@ -1,6 +1,0 @@
-{"location_type": "", "id": "", "event_s": "", "action_s": [""], "result_s": [[""]], "result_prob": [[1]], "conseq": [[[]]], "requirements": [[]], "gen": {"characters": 0, "opens": 0, "towns": 0, "dungeons": 0, "items": 0}, "spec": [], "strings": {}}
-
-
-item: {"name": "", "adjective": "", "full_name": "", "type": "item"}
-
-character: {"name": "", "inventory": [], "gold": 0, "type": "character"}
