@@ -108,14 +108,19 @@ main_text = "\n\n\n   > ".join([construct_text, options])
 canvas.text(pos, main_text, font=font, fill=f_c)
 
 for key in text_colors.keys():
-    font_col = resourceAccess.get_textcolor(key)
-    array = current_event['strings'].get(key, []) + \
-            previous_event['strings'].get(key, [])
+    if "gold" not in key:
+        font_col = resourceAccess.get_textcolor(key)
+        array = current_event['strings'].get(key, []) + \
+                previous_event['strings'].get(key, [])
+    else:
+        array = []
     for item in array:
         if item is not "":
             item = item.replace('(', '\\(')
             item = item.replace(')', '\\)')
             item = item.replace('?', '\\?')
+            item = item.replace('.', '\\.')
+            item = item.replace('^', '\\^')
             regex = re.compile("\s".join(item.split()))
             text_split = regex.split(main_text)
             new = ""
@@ -190,3 +195,21 @@ image.save(img_path, 'PNG')
 
 # dataAccess.change_post_id(postid)
 # dataAccess.savedata()
+
+
+if len(sys.argv) > 1:
+    text_path = os.path.join(curr_dir, 'text.png')
+    image = Image.new("RGBA", image_dim, color=image_col)
+    canvas = ImageDraw.Draw(image)
+    y = 100
+    x = 100
+    for key, item in text_colors.items():
+        color = tuple(item)
+        text = key + ":  abcdefghijklmnopqrstuvwxyz"
+        pos = (x, y)
+        y += 100
+        if y > 2400:
+          y = 100
+          x = 1650
+        canvas.text(pos, text, font=font, fill=color)
+    image.save(text_path, 'PNG')

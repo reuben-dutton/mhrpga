@@ -6,6 +6,7 @@
 env.json
 eventsaga.json
 new_event.json
-eventinmaking.json
+test_event.json
 event_test.py
 vote_test.py
+event list summary.txt

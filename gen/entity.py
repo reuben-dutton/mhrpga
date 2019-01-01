@@ -31,9 +31,15 @@ class EntityCreator:
         no_items = np.random.randint(5) + 1
         inventory = [self.gen_item() for i in range(no_items)]
         gold = np.random.randint(100)
+        weapon = self.gen_item(item_type='weapon')
+        consume = self.gen_item(item_type='consumable')
+        misc = self.gen_item(item_type='misc')
         return dict(name=name,
                     inventory=inventory,
                     gold=gold,
+                    weapon=weapon,
+                    consumable=consume,
+                    misc=misc,
                     type="character")
 
     def gen_open(self):
@@ -96,8 +102,8 @@ class EntityCreator:
         return dict(name=name,
                     type='dungeon')
 
-    def gen_item(self):
-        item = copy.deepcopy(self.resources.get_item())
-        item['adjective'] = self.resources.get_item_adjective()
+    def gen_item(self, item_type=None):
+        item = copy.deepcopy(self.resources.get_item(item_type))
         item['full_name'] = item['adjective'] + item['name']
+        item['shop_desc'] = "{full_name} ({price}g)".format(**item)
         return item

@@ -80,13 +80,6 @@ class ResourceAccess:
                 name = "Not working time"
         return name
 
-    def get_item_adjective(self):
-        item_adjectives = self.items['adjectives']
-        probs = [item['prob'] for item in item_adjectives]
-        probs = np.array(probs) / sum(probs)
-        adjectives = [item['adjective'] for item in item_adjectives]
-        return np.random.choice(adjectives, p=probs)
-
     def get_open_name(self):
         noun = random.choice(self.nouns).capitalize()
         adj = random.choice(self.adjs).capitalize()
@@ -143,11 +136,37 @@ class ResourceAccess:
         word = random.choice(self.words['dungeon'])
         return "{} of the {} {}".format(word, adj, noun)
 
-    def get_item(self):
+    def get_item_name(self):
         items = self.items['items']
         probs = [item['prob'] for item in items]
         probs = np.array(probs) / sum(probs)
         return np.random.choice(items, p=probs)
+
+    def get_item_name_of_type(self, item_type):
+        check_type = lambda x: x['item_type'] == item_type
+        items = list(filter(check_type, self.items['items']))
+        probs = [item['prob'] for item in items]
+        probs = np.array(probs) / sum(probs)
+        return np.random.choice(items, p=probs)
+
+    def get_item_adjective(self):
+        item_adjectives = self.items['adjectives']
+        probs = [item['prob'] for item in item_adjectives]
+        probs = np.array(probs) / sum(probs)
+        return np.random.choice(item_adjectives, p=probs)
+
+    def get_item(self, item_type=None):
+        if item_type is None:
+            name = self.get_item_name()
+        else:
+            name = self.get_item_name_of_type(item_type)
+        adj = self.get_item_adjective()
+        return dict(name=name['name'],
+                    price=max(1, name['price']+adj['mod']),
+                    adjective=adj['adjective'],
+                    item_type=name['item_type'],
+                    type='item')
+
 
     def get_textcolor(self, text_type):
         return tuple(self.textcolors[text_type])

@@ -15,6 +15,8 @@ event_path = os.path.join(curr_dir, 'event.json')
 null_item = {"name": "None", 
              "adjective": "",
              "full_name": "None",
+             "price": 0,
+             "shop_desc": "None",
              "type": "item"}
 
 class DataAccess:
@@ -88,14 +90,14 @@ class DataAccess:
         boolean_array = []
         satisfied = ""
         for requirement in requirements:
+            append = ""
             for item in requirement:
                 result = eval('self.{}'.format(item))
-                if result[0]:
-                    boolean_array.append(result[1])
-                else:
-                    boolean_array.append(result[1])
+                if not result[0]:
+                    append = result[1]
             if len(requirement) == 0:
-                boolean_array.append("")
+                append = ""
+            boolean_array.append(append)
         return boolean_array
 
     def get_current_event(self):
@@ -259,9 +261,14 @@ class DataAccess:
     def get_all_items(self):
         return self.get_items() + self.get_quest_items()
 
-    def buy_item(self, index):
-        self.add_item(self.region['local']['items'][index])
+    def buy_store_item(self, index):
+        item = self.region['local']['items'][index]
+        self.buy_item(item)
         self.remove_store_item(index)
+
+    def buy_item(self, item):
+        self.add_item(item)
+        self.change_gold(-item['price'])
 
     def add_item(self, item, quest=False, index=None):
         if index is None:
@@ -269,13 +276,13 @@ class DataAccess:
                 self.char['quest'].append(item)
             else:
                 self.char['inventory'].append(item)
-                self.update_sale_items()
         else:
             if quest:
                 self.char['quest'].insert(index, item)
             else:
                 self.char['inventory'].insert(index, item)
-                self.update_sale_items()
+        self.update_sale_items()
+        self.update_item_types()
 
     def remove_item(self, name):
         correct_item = None
@@ -288,6 +295,8 @@ class DataAccess:
             if item['name'] == name:
                 correct_item = item
         self.char['quest'].remove(correct_item)
+        self.update_sale_items()
+        self.update_item_types()
 
     def remove_specific_item(self, full_name):
         correct_item = None
@@ -300,19 +309,60 @@ class DataAccess:
             if item['full_name'] == full_name:
                 correct_item = item
         self.char['quest'].remove(correct_item)
+        self.update_sale_items()
+        self.update_item_types()
 
-    def sell_item(self, item_index):
+    def sell_sale_item(self, item_index):
         removed_item = self.char['for_sale'].pop(item_index)
-        self.char['for_sale'].append(null_item)
         self.char['inventory'].remove(removed_item)
         self.update_sale_items()
+        self.update_item_types()
+        self.change_gold(removed_item['price'])
+
+    def lose_sale_item(self, index):
+        removed_item = self.char['for_sale'].pop(index)
+        self.char['inventory'].remove(removed_item)
+        self.update_sale_items()
+        self.update_item_types()
+
+    def lose_random_sale_item(self):
+        item_count = 0
+        for item in self.char['for_sale']:
+            if item['name'] != 'None':
+                item_count += 1
+        if item_count > 0:
+            random_index = np.random.randint(item_count)
+            removed_item = self.char['for_sale'].pop(random_index)
+            self.char['for_sale'].append(null_item)
+            self.char['inventory'].remove(removed_item)
+            self.update_sale_items()
+            self.update_item_types()
 
     def update_sale_items(self):
+        new_sale_items = []
         for item in self.char['inventory']:
-            if item not in self.char['for_sale']:
-                if null_item in self.char['for_sale']:
-                    self.char['for_sale'].remove(null_item)
-                    self.char['for_sale'].insert(0, item)
+            if item not in new_sale_items:
+                new_sale_items.append(item)
+        if len(new_sale_items) > 4:
+            new_sale_items = new_sale_items[:3]
+        else:
+            for i in range(4 - len(new_sale_items)):
+                new_sale_items.append(null_item)
+        self.char['for_sale'] = new_sale_items
+
+    def update_item_types(self):
+        for item in self.get_all_items():
+            if item['item_type'] == 'weapon':
+                if self.char['weapon'] not in self.get_all_items():
+                    self.char['weapon'] = item
+            elif item['item_type'] == 'consumable':
+                if self.char['consumable'] not in self.get_all_items():
+                    self.char['consumable'] = item
+            elif item['item_type'] == 'misc':
+                if self.char['misc'] not in self.get_all_items():
+                    self.char['misc'] = item
+            else:
+                pass
 
     def get_health(self):
         return self.char['health']
@@ -343,6 +393,13 @@ class DataAccess:
                 return (True, "")
         return (False, "Requires {}".format(name))
 
+    def has_item_type(self, item_type):
+        if self.char[item_type]['name'] == 'None':
+            if item_type == "misc":
+                return (False, "Requires a misc item")
+            return (False, "Requires a {}".format(item_type))
+        return (True, "")
+
     def has_specific_item(self, full_name):
         for item in self.get_all_items():
             if item['full_name'] == full_name:
@@ -354,8 +411,15 @@ class DataAccess:
             return (False, "Requires {} gold".format(gold_amount))
         return (True, "")
 
+    def can_buy_store_item(self, index):
+        cost = self.region['local']['items'][index]['price']
+        return self.has_enough_gold(cost)
+
     def has_sale_item(self, index):
         if self.char['for_sale'][index]['name'] == "None":
             return (False, "Requires an item")
         else:
             return (True, "")
+
+    def custom_requirement(self, requirement):
+        return (False, requirement)
